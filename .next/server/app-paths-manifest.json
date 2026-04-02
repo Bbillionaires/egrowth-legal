@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/team/[id]/route": "app/api/team/[id]/route.js",
+  "/api/documents/generate/route": "app/api/documents/generate/route.js",
+  "/api/team/route": "app/api/team/route.js",
+  "/page": "app/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(dashboard)/settings/page": "app/(dashboard)/settings/page.js",
+  "/(dashboard)/trustee/page": "app/(dashboard)/trustee/page.js",
+  "/(dashboard)/queue/page": "app/(dashboard)/queue/page.js",
+  "/(dashboard)/team/page": "app/(dashboard)/team/page.js",
+  "/(dashboard)/interview/page": "app/(dashboard)/interview/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/vault/page": "app/(dashboard)/vault/page.js"
+}

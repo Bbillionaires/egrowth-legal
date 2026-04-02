@@ -1,0 +1,44 @@
+{
+  "name": "egrowth-legal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@stripe/stripe-js": "^4.6.0",
+    "@supabase/ssr": "^0.5.1",
+    "@supabase/supabase-js": "^2.45.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "docxtemplater": "^3.49.0",
+    "file-saver": "^2.0.5",
+    "geist": "^1.7.0",
+    "lucide-react": "^0.441.0",
+    "next": "14.2.5",
+    "pizzip": "^3.1.7",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hook-form": "^7.53.0",
+    "resend": "^4.0.0",
+    "stripe": "^16.12.0",
+    "tailwind-merge": "^2.5.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

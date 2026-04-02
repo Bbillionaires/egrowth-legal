@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand: #1a6b4a;
+    --brand-light: #e6f5ee;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg text-sm border border-gray-200 transition-colors;
+  }
+  .btn-ghost {
+    @apply hover:bg-gray-100 text-gray-600 font-medium px-3 py-2 rounded-lg text-sm transition-colors;
+  }
+  .input {
+    @apply w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent;
+  }
+  .label {
+    @apply block text-xs font-medium text-gray-500 mb-1.5;
+  }
+  .card {
+    @apply bg-white border border-gray-200 rounded-xl p-4;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-pending   { @apply bg-amber-50  text-amber-700; }
+  .badge-review    { @apply bg-blue-50   text-blue-700; }
+  .badge-complete  { @apply bg-green-50  text-green-700; }
+  .badge-active    { @apply bg-emerald-50 text-emerald-700; }
+  .badge-rejected  { @apply bg-red-50    text-red-700; }
+  .badge-master    { @apply bg-emerald-50 text-emerald-700; }
+  .badge-admin     { @apply bg-blue-50   text-blue-700; }
+  .badge-staff     { @apply bg-amber-50  text-amber-700; }
+  .badge-notary    { @apply bg-purple-50 text-purple-700; }
+  .badge-client    { @apply bg-gray-100  text-gray-600; }
+}
