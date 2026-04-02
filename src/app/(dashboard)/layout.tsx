@@ -21,6 +21,7 @@ const NAV = [
   ]},
   { label: 'Admin',       items: [
     { href: '/team',     icon: Users,    label: 'Team & Roles' },
+    { href: '/content',  icon: Settings, label: 'Content Manager' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ]},
 ]
