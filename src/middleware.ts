@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
 const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
+const CLIENT_ROUTES = ['/interview', '/verify', '/account/sharing', '/client']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -28,7 +29,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Not authenticated → redirect to login (except public routes)
-  if (!user && !PUBLIC_ROUTES.some(r => path.startsWith(r))) {
+  if (!user && !PUBLIC_ROUTES.some(r => path.startsWith(r)) && !CLIENT_ROUTES.some(r => path.startsWith(r))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
