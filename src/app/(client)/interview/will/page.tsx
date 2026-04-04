@@ -403,10 +403,10 @@ export default function WillInterview() {
               Your answers have been saved. Our team will prepare your will documents and reach out within 2 business days.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
-              <button onClick={() => router.push('/client/documents')} className="btn-primary px-6">
+              <button onClick={() => router.push('/vault')} className="btn-primary px-6">
                 View my documents
               </button>
-              <button onClick={() => router.push('/client/dashboard')} className="btn-secondary px-6">
+              <button onClick={() => router.push('/dashboard')} className="btn-secondary px-6">
                 Back to dashboard
               </button>
             </div>

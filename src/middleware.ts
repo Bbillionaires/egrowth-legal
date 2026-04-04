@@ -2,8 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
-const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
-const CLIENT_ROUTES = ['/interview', '/verify', '/account/sharing', '/client']
+const CLIENT_ROUTES = ['/interview', '/verify', '/account', '/client']
+const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault', '/content']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -28,22 +28,23 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  // Not authenticated → redirect to login (except public routes)
-  if (!user && !PUBLIC_ROUTES.some(r => path.startsWith(r)) && !CLIENT_ROUTES.some(r => path.startsWith(r))) {
+  const isPublic = PUBLIC_ROUTES.some(r => path.startsWith(r))
+  const isClient = CLIENT_ROUTES.some(r => path.startsWith(r))
+  const isStaff = STAFF_ONLY.some(r => path.startsWith(r))
+
+  if (!user && !isPublic && !isClient) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Authenticated on login page → redirect to dashboard
-  if (user && PUBLIC_ROUTES.some(r => path.startsWith(r))) {
+  if (user && isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
-  // Role check for staff-only routes
-  if (user && STAFF_ONLY.some(r => path.startsWith(r))) {
+  if (user && isStaff) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
