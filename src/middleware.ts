@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
 const CLIENT_ROUTES = ['/interview', '/verify', '/account', '/client']
-const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault', '/content']
+const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
