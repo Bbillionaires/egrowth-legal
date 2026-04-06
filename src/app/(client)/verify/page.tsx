@@ -41,33 +41,46 @@ export default function VerifyIdentityPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!frontFile || !clientId || !idType) { setError('Please select your ID type and upload the front of your ID.'); return }
+    const currentIdType = idType
+    const currentFrontFile = frontFile
+    if (!currentFrontFile || !clientId || !currentIdType) { 
+      setError('Please select your ID type and upload the front of your ID.')
+      return 
+    }
     setError('')
     setUploading(true)
-
+  
     async function uploadFile(file: File, path: string) {
       const { data, error } = await supabase.storage.from('client-ids').upload(path, file, { upsert: true })
       if (error) throw error
       return data?.path ?? null
     }
-
+  
     try {
       const ts = Date.now()
-      const frontPath = await uploadFile(frontFile, `${clientId}/${ts}_front`)
+      const frontPath = await uploadFile(currentFrontFile, `${clientId}/${ts}_front`)
       const backPath = backFile ? await uploadFile(backFile, `${clientId}/${ts}_back`) : null
       const selfiePath = selfieFile ? await uploadFile(selfieFile, `${clientId}/${ts}_selfie`) : null
-
+  
       const { data: existing } = await supabase.from('client_verification').select('id').eq('client_id', clientId).single()
       if (existing) {
         await supabase.from('client_verification').update({
-          id_type: idType, id_front_path: frontPath, id_back_path: backPath,
-          selfie_path: selfiePath, status: 'pending', submitted_at: new Date().toISOString(),
+          id_type: currentIdType,
+          id_front_path: frontPath,
+          id_back_path: backPath,
+          selfie_path: selfiePath,
+          status: 'pending',
+          submitted_at: new Date().toISOString(),
         }).eq('client_id', clientId)
       } else {
         await supabase.from('client_verification').insert({
-          client_id: clientId, id_type: idType, id_front_path: frontPath,
-          id_back_path: backPath, selfie_path: selfiePath,
-          status: 'pending', submitted_at: new Date().toISOString(),
+          client_id: clientId,
+          id_type: currentIdType,
+          id_front_path: frontPath,
+          id_back_path: backPath,
+          selfie_path: selfiePath,
+          status: 'pending',
+          submitted_at: new Date().toISOString(),
         })
       }
       setStatus('pending')
@@ -77,7 +90,6 @@ export default function VerifyIdentityPage() {
     }
     setUploading(false)
   }
-
   const statusConfig: Record<string,{icon:React.ReactNode;title:string;desc:string;color:string}> = {
     pending: { icon:<Clock size={28} className="text-amber-500"/>, title:'Verification pending', desc:'Your documents have been submitted and are being reviewed. This usually takes 1–2 business days.', color:'bg-amber-50' },
     verified: { icon:<CheckCircle size={28} className="text-green-500"/>, title:'Identity verified', desc:'Your identity has been verified. You can now add trusted contacts and access all features.', color:'bg-green-50' },

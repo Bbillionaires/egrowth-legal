@@ -118,33 +118,46 @@ export default function WillInterview() {
     const allAnswers = {...answers, ...Object.fromEntries(Object.entries(multiAnswers).map(([k,v]) => [k, v.join(', ')]))}
     try {
       const { data: interview, error: intErr } = await supabase.from('interviews').insert({
-        client_id: clientId, service_type: 'trust_estate', status: 'completed',
-        current_step: total, total_steps: total, answers: allAnswers,
-        started_by: userId, completed_at: new Date().toISOString(),
+        client_id: clientId,
+        service_type: 'trust_estate',
+        status: 'completed',
+        current_step: total,
+        total_steps: total,
+        answers: allAnswers,
+        started_by: userId,
+        completed_at: new Date().toISOString(),
       }).select('id').single()
       if (intErr) throw intErr
 
       const lastName = (answers['full_name'] ?? 'Client').split(' ').pop() ?? 'Client'
-      const docNames = ['Revocable Living Trust','Pour-Over Will','Healthcare Directive','Power of Attorney']
-      const { data: docs, error: docErr } = await supabase.from('documents').insert(
-        docNames.map(name => ({
-          client_id: clientId, interview_id: interview?.id,
-          name: `${lastName}_${name.replace(/ /g,'_')}.docx`,
-          document_type: name, service_type: 'trust_estate',
-          status: 'queued', generated_by: userId,
-        }))
-      ).select('id')
-      if (docErr) throw docErr
+      const docNames = ['Revocable Living Trust', 'Pour-Over Will', 'Healthcare Directive', 'Power of Attorney']
 
-      if (docs) {
-        await supabase.from('submission_queue').insert(
-          docs.map((d: any) => ({ document_id: d.id, client_id: clientId, filing_state: answers['state']??null, priority: 3 }))
-        )
+      for (const name of docNames) {
+        const { data: doc, error: docErr } = await supabase.from('documents').insert({
+          client_id: clientId,
+          interview_id: interview?.id,
+          name: `${lastName}_${name.replace(/ /g, '_')}.docx`,
+          document_type: name,
+          service_type: 'trust_estate',
+          status: 'queued',
+          generated_by: userId,
+        }).select('id').single()
+        if (docErr) throw docErr
+
+        const { error: qErr } = await supabase.from('submission_queue').insert({
+          document_id: doc.id,
+          client_id: clientId,
+          status: 'pending',
+          priority: 3,
+          filing_state: answers['state'] ?? null,
+        })
+        if (qErr) throw qErr
       }
+
       setCurrent(total)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Submit error:', err)
-      setErrors({ submit: 'Something went wrong saving your answers. Please try again.' })
+      setErrors({ submit: err.message ?? 'Something went wrong. Please try again.' })
     }
     setSaving(false)
   }
