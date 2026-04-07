@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
   })
   if (inviteError) {
-    return NextResponse.json({ error: inviteError.message }, { status: 400 })
+    console.error('Invite error:', inviteError)
+    return NextResponse.json({ error: inviteError.message, details: inviteError }, { status: 400 })
   }
 
   const { data: profile } = await admin
