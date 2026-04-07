@@ -90,14 +90,14 @@ export default function InterviewPage() {
             onNext={async () => {
               // Create interview record
               const { data: { user } } = await supabase.auth.getUser()
-              const { data: interview } = await supabase.from('interviews').insert({
-                client_id: '00000000-0000-0000-0000-000000000000', // temp placeholder
+              const { data: interview } = await supabase.from('interviews').upsert({
+                client_id: '00000000-0000-0000-0000-000000000000',
                 service_type: answers.service_type ?? 'trust_estate',
                 status: 'in_progress',
                 current_step: 2,
                 answers,
                 started_by: user?.id,
-              }).select().single()
+              }, { onConflict: 'client_id,service_type', ignoreDuplicates: false }).select().single()
               if (interview) setInterviewId(interview.id)
               setStep(2)
             }}
@@ -166,6 +166,7 @@ export default function InterviewPage() {
                       client_id: clientId,
                       filing_state: answers.state,
                       priority: 3,
+                      status: 'queued',
                     }))
                   )
                   // Complete interview
