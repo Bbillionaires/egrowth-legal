@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     user_metadata: { full_name, role, phone },
   })
   if (createError) {
-    console.error('Create user error:', createError)
-    return NextResponse.json({ error: createError.message }, { status: 400 })
+    console.error('Create user error full:', JSON.stringify(createError))
+    return NextResponse.json({ error: createError.message, code: createError.status, full: JSON.stringify(createError) }, { status: 400 })
   }
   
   await admin.from('profiles')
