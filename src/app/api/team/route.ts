@@ -38,13 +38,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile })
   }
 
-  const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name, role, phone },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
+  const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name, role, phone },
   })
-  if (inviteError) {
-    console.error('Invite error:', inviteError)
-    return NextResponse.json({ error: inviteError.message, details: inviteError }, { status: 400 })
+  if (createError) {
+    console.error('Create user error:', createError)
+    return NextResponse.json({ error: createError.message }, { status: 400 })
+  }
+  
+  await admin.from('profiles')
+    .update({ full_name, role, phone, created_by: user.id })
+    .eq('id', newUser.user.id)
+  
+  await admin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password` }
+  })
+  
+  return NextResponse.json({ success: true, userId: newUser.user.id })
   }
 
   const { data: profile } = await admin
