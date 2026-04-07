@@ -42,10 +42,11 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
       body: JSON.stringify(form),
     })
     const data = await res.json()
-    if (data.profile) {
-      setMembers(prev => [...prev, data.profile])
+    if (data.success || data.profile) {
+      // Reload the page to get fresh data from server
       setShowModal(false)
       setForm({ email: '', full_name: '', role: 'staff', phone: '' })
+      window.location.reload()
     }
     setLoading(false)
   }
