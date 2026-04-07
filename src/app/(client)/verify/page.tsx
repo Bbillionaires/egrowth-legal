@@ -35,7 +35,7 @@ export default function VerifyIdentityPage() {
     if (!client) return
     setClientId(client.id)
 
-    const { data: verif } = await supabase.from('client_verification').select('status').eq('client_id', client.id).single()
+    const { data: verif } = await supabase.from('client_verification').select('status').eq('client_id', client.id).maybeSingle()
     if (verif) setStatus(verif.status)
   }
 

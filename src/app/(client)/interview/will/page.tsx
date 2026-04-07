@@ -147,7 +147,7 @@ export default function WillInterview() {
         const { error: qErr } = await supabase.from('submission_queue').insert({
           document_id: doc.id,
           client_id: clientId,
-          status: 'pending',
+          status: 'queued',
           priority: 3,
           filing_state: answers['state'] ?? null,
         })
