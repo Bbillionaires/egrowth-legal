@@ -117,7 +117,7 @@ export default function WillInterview() {
     setSaving(true)
     const allAnswers = {...answers, ...Object.fromEntries(Object.entries(multiAnswers).map(([k,v]) => [k, v.join(', ')]))}
     try {
-      const { data: interview, error: intErr } = await supabase.from('interviews').insert({
+      const { data: interview, error: intErr } = await supabase.from('interviews').upsert({
         client_id: clientId,
         service_type: 'trust_estate',
         status: 'completed',
@@ -126,7 +126,7 @@ export default function WillInterview() {
         answers: allAnswers,
         started_by: userId,
         completed_at: new Date().toISOString(),
-      }).select('id').single()
+      }, { onConflict: 'client_id,service_type' }).select('id').single()
       if (intErr) throw intErr
 
       const lastName = (answers['full_name'] ?? 'Client').split(' ').pop() ?? 'Client'
