@@ -60,13 +60,3 @@ export async function POST(request: NextRequest) {
   
   return NextResponse.json({ success: true, userId: newUser.user.id })
   }
-
-  const { data: profile } = await admin
-    .from('profiles')
-    .update({ full_name, role, phone, created_by: user.id })
-    .eq('id', inviteData.user.id)
-    .select()
-    .single()
-
-  return NextResponse.json({ profile })
-}
