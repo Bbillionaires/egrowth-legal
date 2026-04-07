@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot create this role' }, { status: 403 })
   }
 
-  // Check if user already exists — if so just update their profile
+  // Check if user already exists
   const { data: existingUsers } = await admin.auth.admin.listUsers()
   const alreadyExists = existingUsers?.users?.find((u: any) => u.email === email)
   if (alreadyExists) {
@@ -34,21 +34,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, userId: alreadyExists.id })
   }
 
-  // Send invite email
-  const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name, role, phone },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
+  // Create user with temp password — no email sent
+  const tempPassword = 'TempPass1!' + Math.random().toString(36).slice(-6)
+  const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+    email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: { full_name, role, phone },
   })
 
-  if (inviteError) {
-    console.error('Invite error:', JSON.stringify(inviteError))
-    return NextResponse.json({ error: inviteError.message }, { status: 400 })
+  if (createError) {
+    console.error('Create error:', JSON.stringify(createError))
+    return NextResponse.json({ error: createError.message }, { status: 400 })
   }
 
-  // Update profile with correct role after invite creates the auth user
+  // Update profile with correct role
   await admin.from('profiles')
     .update({ full_name, role, phone, created_by: user.id })
-    .eq('id', inviteData.user.id)
+    .eq('id', newUser.user.id)
 
-  return NextResponse.json({ success: true, userId: inviteData.user.id })
+  return NextResponse.json({ 
+    success: true, 
+    userId: newUser.user.id,
+    tempPassword,
+    message: 'User created. Share the temporary password with them to log in.'
+  })
 }
