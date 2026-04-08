@@ -39,7 +39,7 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
     if (!user) return
     const { data } = await supabase
       .from('profiles')
-      .select('*, creator:profiles!profiles_created_by_fkey(full_name)')
+      .select('*')
       .order('created_at', { ascending: true })
     if (data) setMembers(data)
   }
