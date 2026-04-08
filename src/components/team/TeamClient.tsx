@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Profile, UserRole } from '@/lib/types'
 import { UserPlus, Edit2, ToggleLeft, ToggleRight, Shield, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
+
 
 const ROLE_HIERARCHY: UserRole[] = ['master', 'admin', 'staff', 'notary', 'client']
 
@@ -26,6 +28,21 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
   const [editMember, setEditMember] = useState<any | null>(null)
   const [form, setForm] = useState({ email: '', full_name: '', role: 'staff' as UserRole, phone: '' })
   const [loading, setLoading] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadTeam()
+  }, [])
+
+  async function loadTeam() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('profiles')
+      .select('*, creator:profiles!profiles_created_by_fkey(full_name)')
+      .order('created_at', { ascending: true })
+    if (data) setMembers(data)
+  }
 
   // Roles the current user can create
   const creatableRoles: UserRole[] = currentRole === 'master'
@@ -46,7 +63,7 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
       // Reload the page to get fresh data from server
       setShowModal(false)
       setForm({ email: '', full_name: '', role: 'staff', phone: '' })
-      window.location.reload()
+      await loadTeam()
     }
     setLoading(false)
   }
