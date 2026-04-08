@@ -13,7 +13,7 @@ export default async function TeamPage() {
     .from('profiles')
     .select('*, creator:profiles!profiles_created_by_fkey(full_name)')
     .order('created_at', { ascending: true })
-
+  console.log('Team count:', team?.length, 'Team:', JSON.stringify(team))
   return (
     <TeamClient
       team={team ?? []}
