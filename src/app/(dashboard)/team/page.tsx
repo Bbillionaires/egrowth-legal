@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import TeamClient from '@/components/team/TeamClient'
+export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {
   const supabase = await createClient()
