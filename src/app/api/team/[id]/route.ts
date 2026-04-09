@@ -24,6 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .select()
     .single()
 
+  console.log('Update result:', JSON.stringify({ data, error }))
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ profile: data })
 }
