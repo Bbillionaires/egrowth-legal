@@ -88,17 +88,24 @@ export default function InterviewPage() {
             answers={answers}
             onChange={updateAnswers}
             onNext={async () => {
-              // Create interview record
               const { data: { user } } = await supabase.auth.getUser()
-              const { data: interview } = await supabase.from('interviews').upsert({
-                client_id: '00000000-0000-0000-0000-000000000000',
-                service_type: answers.service_type ?? 'trust_estate',
-                status: 'in_progress',
-                current_step: 2,
-                answers,
-                started_by: user?.id,
-              }, { onConflict: 'client_id,service_type', ignoreDuplicates: false }).select().single()
-              if (interview) setInterviewId(interview.id)
+              const { data: tempClient } = await supabase.from('clients').insert({
+                full_name: 'Draft Client',
+                email: `draft_${Date.now()}@egrowth.temp`,
+                created_by: user?.id,
+              }).select('id').single()
+              if (tempClient) {
+                const { data: interview } = await supabase.from('interviews').insert({
+                  client_id: tempClient.id,
+                  service_type: answers.service_type ?? 'trust_estate',
+                  status: 'in_progress',
+                  current_step: 2,
+                  answers,
+                  started_by: user?.id,
+                }).select().single()
+                if (interview) setInterviewId(interview.id)
+                setClientId(tempClient.id)
+              }
               setStep(2)
             }}
           />
