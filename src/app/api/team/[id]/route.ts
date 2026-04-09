@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = await createClient()
   const admin = createServiceClient()
+  console.log('Service key exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
