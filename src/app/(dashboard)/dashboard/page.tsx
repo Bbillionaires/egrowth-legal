@@ -14,6 +14,7 @@ export default async function DashboardPage() {
     { count: docCount },
     { data: recentQueue },
     { data: profile },
+    { data: ledgerData },
   ] = await Promise.all([
     supabase.from('clients').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('submission_queue').select('*', { count: 'exact', head: true }).in('status', ['queued', 'in_review']),
@@ -23,15 +24,19 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     supabase.from('profiles').select('full_name, role').eq('id', user?.id ?? '').single(),
+    supabase.from('trustee_ledger').select('amount_cents').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
   ])
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
 
+  const trusteeRevenueCents = (ledgerData ?? []).reduce((sum: number, row: any) => sum + (row.amount_cents ?? 0), 0)
+  const trusteeRevenueFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(trusteeRevenueCents / 100)
+
   const stats = [
-    { label: 'Active Clients',    value: clientCount ?? 0,    icon: Users,     delta: '+3 this week',  color: 'text-brand-600' },
-    { label: 'Pending Review',    value: pendingCount ?? 0,   icon: Clock,     delta: 'Needs attention', color: 'text-amber-600' },
-    { label: 'Docs Generated',    value: docCount ?? 0,       icon: FileText,  delta: 'All time',        color: 'text-blue-600' },
-    { label: 'Trustee Revenue',   value: '$0',                icon: DollarSign,delta: 'This month',      color: 'text-emerald-600' },
+    { label: 'Active Clients',    value: clientCount ?? 0,          icon: Users,     delta: '+3 this week',    color: 'text-brand-600' },
+    { label: 'Pending Review',    value: pendingCount ?? 0,         icon: Clock,     delta: 'Needs attention',  color: 'text-amber-600' },
+    { label: 'Docs Generated',    value: docCount ?? 0,             icon: FileText,  delta: 'All time',         color: 'text-blue-600' },
+    { label: 'Trustee Revenue',   value: trusteeRevenueFormatted,   icon: DollarSign,delta: 'This month',       color: 'text-emerald-600' },
   ]
 
   const statusBadge: Record<string, string> = {

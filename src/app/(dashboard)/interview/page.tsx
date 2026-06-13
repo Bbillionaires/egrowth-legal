@@ -18,6 +18,7 @@ export default function InterviewPage() {
   const [clientId, setClientId] = useState<string | null>(null)
   const [interviewId, setInterviewId] = useState<string | null>(null)
   const [generatedDocs, setGeneratedDocs] = useState<string[]>([])
+  const [stepError, setStepError] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -83,11 +84,17 @@ export default function InterviewPage() {
 
       {/* Step content */}
       <div className="max-w-2xl">
+        {stepError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+            {stepError}
+          </div>
+        )}
         {step === 1 && (
           <StepService
             answers={answers}
             onChange={updateAnswers}
             onNext={async () => {
+              setStepError(null)
               const { data: { user } } = await supabase.auth.getUser()
               const { data: tempClient } = await supabase.from('clients').insert({
                 full_name: 'Draft Client',
@@ -115,18 +122,33 @@ export default function InterviewPage() {
             answers={answers}
             onChange={updateAnswers}
             onNext={async () => {
-              // Upsert client
-              const { data: client } = await supabase.from('clients').insert({
-                full_name: answers.full_name ?? '',
-                email: answers.email ?? '',
-                phone: answers.phone,
-                dob: answers.dob,
-                state: answers.state,
-              }).select().single()
-              if (client) {
-                setClientId(client.id)
+              setStepError(null)
+              // Update the existing draft client instead of inserting a new one
+              if (clientId) {
+                await supabase.from('clients').update({
+                  full_name: answers.full_name ?? '',
+                  email: answers.email ?? '',
+                  phone: answers.phone,
+                  dob: answers.dob,
+                  state: answers.state,
+                }).eq('id', clientId)
                 if (interviewId) {
-                  await supabase.from('interviews').update({ client_id: client.id }).eq('id', interviewId)
+                  await supabase.from('interviews').update({ client_id: clientId }).eq('id', interviewId)
+                }
+              } else {
+                // Fallback: insert if no draft client exists
+                const { data: client } = await supabase.from('clients').insert({
+                  full_name: answers.full_name ?? '',
+                  email: answers.email ?? '',
+                  phone: answers.phone,
+                  dob: answers.dob,
+                  state: answers.state,
+                }).select().single()
+                if (client) {
+                  setClientId(client.id)
+                  if (interviewId) {
+                    await supabase.from('interviews').update({ client_id: client.id }).eq('id', interviewId)
+                  }
                 }
               }
               await next()
@@ -146,46 +168,56 @@ export default function InterviewPage() {
           <StepReview
             answers={answers}
             onNext={async () => {
-              // Generate documents and add to queue
-              const docs = getDocumentList(answers.service_type ?? 'trust_estate', answers)
-              const lastName = answers.full_name?.split(' ').pop() ?? 'Client'
+              setStepError(null)
+              try {
+                // Generate documents and add to queue
+                const docs = getDocumentList(answers.service_type ?? 'trust_estate', answers)
+                const lastName = answers.full_name?.split(' ').pop() ?? 'Client'
 
-              if (clientId) {
-                const docInserts = docs.map(d => ({
-                  client_id: clientId,
-                  interview_id: interviewId,
-                  name: `${lastName}_${d.replace(/ /g,'_')}.docx`,
-                  document_type: d,
-                  service_type: answers.service_type ?? 'trust_estate',
-                  status: 'queued',
-                  is_trustee_file: answers.use_egrowth_trustee === true,
-                }))
+                if (clientId) {
+                  const docInserts = docs.map(d => ({
+                    client_id: clientId,
+                    interview_id: interviewId,
+                    name: `${lastName}_${d.replace(/ /g,'_')}.docx`,
+                    document_type: d,
+                    service_type: answers.service_type ?? 'trust_estate',
+                    status: 'queued',
+                    is_trustee_file: answers.use_egrowth_trustee === true,
+                  }))
 
-                const { data: createdDocs } = await supabase
-                  .from('documents').insert(docInserts).select()
+                  const { data: createdDocs, error: docsError } = await supabase
+                    .from('documents').insert(docInserts).select()
 
-                if (createdDocs) {
-                  setGeneratedDocs(createdDocs.map(d => d.name))
-                  // Add to submission queue
-                  await supabase.from('submission_queue').insert(
-                    createdDocs.map(d => ({
-                      document_id: d.id,
-                      client_id: clientId,
-                      filing_state: answers.state,
-                      priority: 3,
-                      status: 'queued',
-                    }))
-                  )
-                  // Complete interview
-                  if (interviewId) {
-                    await supabase.from('interviews').update({
-                      status: 'completed',
-                      completed_at: new Date().toISOString(),
-                    }).eq('id', interviewId)
+                  if (docsError) throw new Error(`Failed to create documents: ${docsError.message}`)
+
+                  if (createdDocs) {
+                    setGeneratedDocs(createdDocs.map(d => d.name))
+                    // Add to submission queue
+                    const { error: queueError } = await supabase.from('submission_queue').insert(
+                      createdDocs.map(d => ({
+                        document_id: d.id,
+                        client_id: clientId,
+                        filing_state: answers.state,
+                        priority: 3,
+                        status: 'queued',
+                      }))
+                    )
+                    if (queueError) throw new Error(`Failed to add to queue: ${queueError.message}`)
+
+                    // Complete interview
+                    if (interviewId) {
+                      const { error: interviewError } = await supabase.from('interviews').update({
+                        status: 'completed',
+                        completed_at: new Date().toISOString(),
+                      }).eq('id', interviewId)
+                      if (interviewError) throw new Error(`Failed to complete interview: ${interviewError.message}`)
+                    }
                   }
                 }
+                setStep(5)
+              } catch (err) {
+                setStepError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.')
               }
-              setStep(5)
             }}
             onBack={prev}
           />
@@ -201,6 +233,7 @@ export default function InterviewPage() {
               setClientId(null)
               setInterviewId(null)
               setGeneratedDocs([])
+              setStepError(null)
             }}
           />
         )}

@@ -13,6 +13,16 @@ const PRIORITY_CLASS: Record<number, string> = {
   3: 'badge bg-gray-100 text-gray-600',
 }
 
+const statusClass: Record<string, string> = {
+  pending: 'badge-pending',
+  queued: 'badge-pending',
+  in_review: 'badge-review',
+  approved: 'badge-approved',
+  rejected: 'badge-rejected',
+  submitted: 'badge-submitted',
+  complete: 'badge-completed',
+}
+
 interface Props {
   initialItems: any[]
   staff: Pick<Profile, 'id' | 'full_name' | 'role'>[]
@@ -159,7 +169,7 @@ export default function QueueClient({ initialItems, staff }: Props) {
                       {item.assignee?.full_name ?? <span className="text-gray-400 italic">Unassigned</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge badge-${item.status.replace('_', '')}`}>
+                      <span className={`badge ${statusClass[item.status] ?? 'badge-pending'}`}>
                         {item.status.replace('_', ' ')}
                       </span>
                     </td>

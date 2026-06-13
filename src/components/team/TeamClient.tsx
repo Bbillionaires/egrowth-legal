@@ -28,6 +28,7 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
   const [editMember, setEditMember] = useState<any | null>(null)
   const [form, setForm] = useState({ email: '', full_name: '', role: 'staff' as UserRole, phone: '' })
   const [loading, setLoading] = useState(false)
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
 
   async function handleCreate() {
     setLoading(true)
+    setTempPassword(null)
     const res = await fetch('/api/team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,12 +62,21 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
     })
     const data = await res.json()
     if (data.success || data.profile) {
-      // Reload the page to get fresh data from server
-      setShowModal(false)
-      setForm({ email: '', full_name: '', role: 'staff', phone: '' })
+      if (data.tempPassword) {
+        setTempPassword(data.tempPassword)
+      } else {
+        setShowModal(false)
+        setForm({ email: '', full_name: '', role: 'staff', phone: '' })
+      }
       await loadTeam()
     }
     setLoading(false)
+  }
+
+  function handleModalClose() {
+    setShowModal(false)
+    setTempPassword(null)
+    setForm({ email: '', full_name: '', role: 'staff', phone: '' })
   }
 
   async function toggleActive(id: string, current: boolean) {
@@ -119,111 +130,127 @@ export default function TeamClient({ team, currentUserId, currentRole }: Props) 
       </div>
 
       {/* Team by role */}
-      {(Object.entries(grouped) as [UserRole, any[]][])
-        .filter(([, list]) => list.length > 0)
-        .map(([role, list]) => (
-          <div key={role} className="card mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield size={14} className="text-gray-400" />
-              <h2 className="text-sm font-medium capitalize">{role}s</h2>
-              <span className="badge bg-gray-100 text-gray-500">{list.length}</span>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-2 text-xs font-medium text-gray-400">Name</th>
-                  <th className="text-left py-2 text-xs font-medium text-gray-400">Email</th>
-                  <th className="text-left py-2 text-xs font-medium text-gray-400">Created By</th>
-                  <th className="text-left py-2 text-xs font-medium text-gray-400">Status</th>
-                  {currentRole === 'master' || currentRole === 'admin' ? (
-                    <th className="text-left py-2 text-xs font-medium text-gray-400">Actions</th>
-                  ) : null}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {list.map(member => (
-                  <tr key={member.id}>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-500">
-                          {member.full_name?.charAt(0) ?? '?'}
-                        </div>
-                        <span className="font-medium">{member.full_name ?? '—'}</span>
-                        {member.id === currentUserId && (
-                          <span className="badge bg-brand-50 text-brand-600 text-[10px]">You</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-2.5 text-gray-500 text-xs">{member.email}</td>
-                    <td className="py-2.5 text-gray-400 text-xs">
-                      {member.creator?.full_name ?? '—'}
-                    </td>
-                    <td className="py-2.5">
-                      <span className={clsx('badge', member.is_active ? 'badge-active' : 'bg-gray-100 text-gray-400')}>
-                        {member.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    {(currentRole === 'master' || currentRole === 'admin') && (
-                      <td className="py-2.5">
-                        {member.id !== currentUserId && member.role !== 'master' && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => toggleActive(member.id, member.is_active)}
-                              className="p-1 rounded hover:bg-gray-100 text-gray-400"
-                              title={member.is_active ? 'Deactivate' : 'Activate'}
-                            >
-                              {member.is_active
-                                ? <ToggleRight size={16} className="text-brand-500" />
-                                : <ToggleLeft size={16} />
-                              }
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {(Object.entries(grouped) as [UserRole, any[]][]).filter(([, list]) => list.length > 0).map(([role, list]) => (
+        <div key={role} className="card mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield size={14} className="text-gray-400" />
+            <h2 className="text-sm font-medium capitalize">{role}s</h2>
+            <span className="badge bg-gray-100 text-gray-500">{list.length}</span>
           </div>
-        ))}
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left py-2 text-xs font-medium text-gray-400">Name</th>
+                <th className="text-left py-2 text-xs font-medium text-gray-400">Email</th>
+                <th className="text-left py-2 text-xs font-medium text-gray-400">Created By</th>
+                <th className="text-left py-2 text-xs font-medium text-gray-400">Status</th>
+                {currentRole === 'master' || currentRole === 'admin' ? (
+                  <th className="text-left py-2 text-xs font-medium text-gray-400">Actions</th>
+                ) : null}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {list.map(member => (
+                <tr key={member.id}>
+                  <td className="py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-500">
+                        {member.full_name?.charAt(0) ?? '?'}
+                      </div>
+                      <span className="font-medium">{member.full_name ?? '—'}</span>
+                      {member.id === currentUserId && (
+                        <span className="badge bg-brand-50 text-brand-600 text-[10px]">You</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-2.5 text-gray-500 text-xs">{member.email}</td>
+                  <td className="py-2.5 text-gray-400 text-xs">
+                    {member.creator?.full_name ?? '—'}
+                  </td>
+                  <td className="py-2.5">
+                    <span className={clsx('badge', member.is_active ? 'badge-active' : 'bg-gray-100 text-gray-400')}>
+                      {member.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  {(currentRole === 'master' || currentRole === 'admin') && (
+                    <td className="py-2.5">
+                      {member.id !== currentUserId && member.role !== 'master' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleActive(member.id, member.is_active)}
+                            className="p-1 rounded hover:bg-gray-100 text-gray-400"
+                            title={member.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {member.is_active
+                              ? <ToggleRight size={16} className="text-brand-500" />
+                              : <ToggleLeft size={16} />
+                            }
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
 
       {/* Add member modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
             <h3 className="text-base font-semibold mb-4">Add Team Member</h3>
-            <div className="space-y-3">
+            {tempPassword ? (
               <div>
-                <label className="label">Full Name</label>
-                <input value={form.full_name} onChange={e => setForm(f => ({...f, full_name: e.target.value}))} className="input" placeholder="Jane Smith" />
+                <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200">
+                  <p className="text-sm font-medium text-green-800 mb-1">Team member created successfully!</p>
+                  <p className="text-xs text-green-700 mb-2">Temporary password (share securely):</p>
+                  <p className="font-mono text-sm bg-white border border-green-300 rounded px-3 py-2 text-green-900 select-all">
+                    {tempPassword}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 mb-4">
+                  A temporary password has been generated. Share it securely with the new team member. They should change it on first login.
+                </p>
+                <button onClick={handleModalClose} className="btn-primary w-full">Done</button>
               </div>
-              <div>
-                <label className="label">Email Address</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="input" placeholder="jane@egrowth.com" />
-              </div>
-              <div>
-                <label className="label">Phone (optional)</label>
-                <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} className="input" placeholder="(904) 555-0100" />
-              </div>
-              <div>
-                <label className="label">Role</label>
-                <select value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value as UserRole}))} className="input">
-                  {creatableRoles.map(r => (
-                    <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-3">
-              An invite email will be sent. They will set their own password on first login.
-            </p>
-            <div className="flex gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={handleCreate} disabled={loading || !form.email || !form.full_name} className="btn-primary flex-1">
-                {loading ? 'Sending...' : 'Send Invite'}
-              </button>
-            </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div>
+                    <label className="label">Full Name</label>
+                    <input value={form.full_name} onChange={e => setForm(f => ({...f, full_name: e.target.value}))} className="input" placeholder="Jane Smith" />
+                  </div>
+                  <div>
+                    <label className="label">Email Address</label>
+                    <input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="input" placeholder="jane@egrowth.com" />
+                  </div>
+                  <div>
+                    <label className="label">Phone (optional)</label>
+                    <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} className="input" placeholder="(904) 555-0100" />
+                  </div>
+                  <div>
+                    <label className="label">Role</label>
+                    <select value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value as UserRole}))} className="input">
+                      {creatableRoles.map(r => (
+                        <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  A temporary password will be generated. Share it securely with the new team member.
+                </p>
+                <div className="flex gap-2 mt-5">
+                  <button onClick={handleModalClose} className="btn-secondary flex-1">Cancel</button>
+                  <button onClick={handleCreate} disabled={loading || !form.email || !form.full_name} className="btn-primary flex-1">
+                    {loading ? 'Creating...' : 'Create Member'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

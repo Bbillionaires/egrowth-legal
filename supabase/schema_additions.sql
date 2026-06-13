@@ -143,6 +143,8 @@ CREATE POLICY "verify: client own" ON client_verification FOR SELECT USING (
 CREATE POLICY "verify: client upload" ON client_verification FOR UPDATE USING (
   client_id IN (SELECT id FROM clients WHERE profile_id = auth.uid())
 );
+CREATE POLICY "client_verification: client insert own" ON client_verification FOR INSERT
+  WITH CHECK (client_id IN (SELECT id FROM clients WHERE user_id = auth.uid()));
 
 -- Delegates: client manages their own, staff full
 ALTER TABLE account_delegates ENABLE ROW LEVEL SECURITY;
@@ -172,3 +174,8 @@ CREATE INDEX idx_delegate_log ON delegate_access_log(delegate_id, created_at);
 INSERT INTO storage.buckets (id, name, public) VALUES
   ('client-ids',  'client-ids',  false),
   ('ad-assets',   'ad-assets',   true);
+
+-- ─────────────────────────────────────────
+-- UNIQUE CONSTRAINT: prevent duplicate service per client
+-- ─────────────────────────────────────────
+ALTER TABLE interviews ADD CONSTRAINT interviews_client_service_unique UNIQUE (client_id, service_type);

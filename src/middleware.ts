@@ -2,7 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
-const CLIENT_ROUTES = ['/interview', '/verify', '/account', '/client']
+// /interview (staff wizard) is NOT a client route — it requires auth
+const CLIENT_ROUTES = ['/verify', '/account', '/client', '/interview/will']
 const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
 
 export async function middleware(request: NextRequest) {

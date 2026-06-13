@@ -1,9 +1,72 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+export const dynamic = 'force-dynamic'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-export default async function SettingsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user?.id ?? '').single()
+export default function SettingsPage() {
+  const supabase = createClient()
+  const [profile, setProfile] = useState<any>(null)
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (data) {
+        setProfile(data)
+        setFullName(data.full_name ?? '')
+        setPhone(data.phone ?? '')
+      }
+    }
+    load()
+  }, [])
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault()
+    setProfileLoading(true)
+    setProfileMsg(null)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { error } = await supabase.from('profiles').update({ full_name: fullName, phone }).eq('id', user.id)
+    setProfileLoading(false)
+    if (error) {
+      setProfileMsg({ type: 'error', text: error.message })
+    } else {
+      setProfile((p: any) => ({ ...p, full_name: fullName, phone }))
+      setProfileMsg({ type: 'success', text: 'Profile updated successfully.' })
+    }
+  }
+
+  async function handlePasswordSave(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordMsg(null)
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'Passwords do not match.' })
+      return
+    }
+    if (newPassword.length < 8) {
+      setPasswordMsg({ type: 'error', text: 'Password must be at least 8 characters.' })
+      return
+    }
+    setPasswordLoading(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setPasswordLoading(false)
+    if (error) {
+      setPasswordMsg({ type: 'error', text: error.message })
+    } else {
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully.' })
+    }
+  }
 
   return (
     <div>
@@ -26,17 +89,24 @@ export default async function SettingsPage() {
               <span className={`badge badge-${profile?.role} capitalize mt-1`}>{profile?.role}</span>
             </div>
           </div>
-          <div className="space-y-3">
+          <form onSubmit={handleProfileSave} className="space-y-3">
             <div>
               <label className="label">Full Name</label>
-              <input defaultValue={profile?.full_name ?? ''} className="input" />
+              <input value={fullName} onChange={e => setFullName(e.target.value)} className="input" />
             </div>
             <div>
               <label className="label">Phone</label>
-              <input defaultValue={profile?.phone ?? ''} placeholder="(904) 555-0100" className="input" />
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(904) 555-0100" className="input" />
             </div>
-            <button className="btn-primary text-sm">Save Changes</button>
-          </div>
+            {profileMsg && (
+              <p className={`text-xs ${profileMsg.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {profileMsg.text}
+              </p>
+            )}
+            <button type="submit" disabled={profileLoading} className="btn-primary text-sm">
+              {profileLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </form>
         </div>
 
         {/* Platform settings (master/admin only) */}
@@ -68,17 +138,36 @@ export default async function SettingsPage() {
         {/* Password */}
         <div className="card">
           <h2 className="text-sm font-medium mb-4">Change Password</h2>
-          <div className="space-y-3">
+          <form onSubmit={handlePasswordSave} className="space-y-3">
             <div>
               <label className="label">New Password</label>
-              <input type="password" placeholder="••••••••" className="input" />
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input"
+              />
             </div>
             <div>
               <label className="label">Confirm Password</label>
-              <input type="password" placeholder="••••••••" className="input" />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input"
+              />
             </div>
-            <button className="btn-primary text-sm">Update Password</button>
-          </div>
+            {passwordMsg && (
+              <p className={`text-xs ${passwordMsg.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {passwordMsg.text}
+              </p>
+            )}
+            <button type="submit" disabled={passwordLoading} className="btn-primary text-sm">
+              {passwordLoading ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
         </div>
       </div>
     </div>
