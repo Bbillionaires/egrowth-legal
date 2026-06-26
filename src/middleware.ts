@@ -1,8 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
-// /interview (staff wizard) is NOT a client route — it requires auth
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password']
+// /reset-password is excluded from the "logged in → dashboard" redirect
+// so Supabase recovery tokens can be exchanged even with an existing session
+const RESET_ROUTE = '/reset-password'
 const CLIENT_ROUTES = ['/verify', '/account', '/client', '/interview/will']
 const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
 
@@ -28,8 +30,12 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   const isPublic = PUBLIC_ROUTES.some(r => path.startsWith(r))
+  const isReset = path.startsWith(RESET_ROUTE)
   const isClient = CLIENT_ROUTES.some(r => path.startsWith(r))
   const isStaff = STAFF_ONLY.some(r => path.startsWith(r))
+
+  // Always allow reset-password through — token exchange must happen on the page
+  if (isReset) return supabaseResponse
 
   // Not logged in + not public + not client route → login
   if (!user && !isPublic && !isClient) {
@@ -38,7 +44,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Logged in + hitting login page → dashboard
+  // Logged in + hitting a public auth page → dashboard
   if (user && isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
