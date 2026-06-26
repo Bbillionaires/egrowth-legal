@@ -260,7 +260,7 @@ CREATE POLICY "docs: client own"       ON documents FOR SELECT USING (
 ALTER TABLE submission_queue ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "queue: staff full"      ON submission_queue FOR ALL USING (is_staff_or_above()) WITH CHECK (is_staff_or_above());
 CREATE POLICY "queue: client insert own" ON submission_queue FOR INSERT
-  WITH CHECK (client_id IN (SELECT id FROM clients WHERE user_id = auth.uid()));
+  WITH CHECK (client_id IN (SELECT id FROM clients WHERE profile_id = auth.uid()));
 
 -- TRUSTEE ACCOUNTS
 ALTER TABLE trustee_accounts ENABLE ROW LEVEL SECURITY;

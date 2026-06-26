@@ -144,7 +144,7 @@ CREATE POLICY "verify: client upload" ON client_verification FOR UPDATE USING (
   client_id IN (SELECT id FROM clients WHERE profile_id = auth.uid())
 );
 CREATE POLICY "client_verification: client insert own" ON client_verification FOR INSERT
-  WITH CHECK (client_id IN (SELECT id FROM clients WHERE user_id = auth.uid()));
+  WITH CHECK (client_id IN (SELECT id FROM clients WHERE profile_id = auth.uid()));
 
 -- Delegates: client manages their own, staff full
 ALTER TABLE account_delegates ENABLE ROW LEVEL SECURITY;
