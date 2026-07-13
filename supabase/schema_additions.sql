@@ -172,3 +172,26 @@ CREATE INDEX idx_delegate_log ON delegate_access_log(delegate_id, created_at);
 INSERT INTO storage.buckets (id, name, public) VALUES
   ('client-ids',  'client-ids',  false),
   ('ad-assets',   'ad-assets',   true);
+
+-- ─────────────────────────────────────────
+-- SECURITY FIX: public signup can no longer self-assign a role.
+-- Previously handle_new_user() trusted a client-supplied `role` in
+-- auth signup metadata, so a direct call to the Supabase Auth API
+-- (bypassing the app's UI) could self-signup as 'master'. New rows
+-- are now always inserted as 'client'; staff/admin/master roles are
+-- only granted afterward by an existing staff member via the
+-- service-role team API.
+-- ─────────────────────────────────────────
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO profiles (id, email, full_name, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'full_name',
+    'client'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

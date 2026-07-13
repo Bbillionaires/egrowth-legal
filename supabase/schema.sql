@@ -34,7 +34,10 @@ CREATE TABLE profiles (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Auto-create profile on signup
+-- Auto-create profile on signup.
+-- Role is always 'client' here regardless of signup metadata — staff/admin/master
+-- roles are only ever granted by an existing staff member via the service-role
+-- team API (src/app/api/team/route.ts), which updates the row after creation.
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -43,7 +46,7 @@ BEGIN
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'client')
+    'client'
   );
   RETURN NEW;
 END;
