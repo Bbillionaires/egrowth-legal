@@ -6,22 +6,15 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, ListChecks, FilePlus, FolderLock,
-  Shield, Users, Settings, LogOut, Bell, ChevronRight, Stamp
+  Shield, Users, Settings, LogOut, ChevronRight
 } from 'lucide-react'
 import clsx from 'clsx'
+import NotificationsBell from './components/NotificationsBell'
 
-type NavItem = {
-  href: string
-  icon: React.ElementType
-  label: string
-  roles?: string[]   // if set, only show for these roles
-}
-
-const NAV: { label: string; items: NavItem[] }[] = [
+const NAV = [
   { label: 'Overview',    items: [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/queue',     icon: ListChecks,      label: 'Submission Queue' },
-    { href: '/notary',    icon: Stamp,           label: 'Notary Queue', roles: ['notary', 'admin', 'master'] },
   ]},
   { label: 'Services',    items: [
     { href: '/interview', icon: FilePlus,   label: 'New Interview' },
@@ -85,37 +78,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {NAV.map(group => {
-            const visibleItems = group.items.filter(
-              item => !item.roles || item.roles.includes(userRole)
-            )
-            if (visibleItems.length === 0) return null
-            return (
-              <div key={group.label} className="mb-4">
-                <p className="px-2 mb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                  {group.label}
-                </p>
-                {visibleItems.map(item => {
-                  const active = pathname === item.href || pathname.startsWith(item.href + '/')
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={clsx(
-                        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm mb-0.5 transition-colors',
-                        active
-                          ? 'bg-brand-50 text-brand-600 font-medium'
-                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                      )}
-                    >
-                      <item.icon size={14} />
-                      {item.label}
-                    </Link>
-                  )
-                })}
-              </div>
-            )
-          })}
+          {NAV.map(group => (
+            <div key={group.label} className="mb-4">
+              <p className="px-2 mb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                {group.label}
+              </p>
+              {group.items.map(item => {
+                const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={clsx(
+                      'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm mb-0.5 transition-colors',
+                      active
+                        ? 'bg-brand-50 text-brand-600 font-medium'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                    )}
+                  >
+                    <item.icon size={14} />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
         </nav>
 
         {/* Sign out */}
@@ -142,10 +129,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-              <Bell size={16} className="text-gray-500" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
-            </button>
+            <NotificationsBell />
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-medium">
                 {userInitials}
