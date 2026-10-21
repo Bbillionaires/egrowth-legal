@@ -85,6 +85,8 @@ Endpoints (staff = master, admin, staff; clients act only on their own interview
 - `GET /api/intake/fl501c3/{interview_id}` returns `payload`, `status` and `current_step`.
 - `PUT /api/intake/fl501c3/{interview_id}` with `{ action: "save", payload, step?, sections? }` stores a draft and, when `sections` is given, reports whether those sections are complete. `{ action: "submit", payload }` requires final validation and completes the interview. Clients cannot change a submitted intake; notaries cannot change any.
 
+Screens: clients open the intake from **Start a Nonprofit** on `/client` (`/client/nonprofit`); staff choose Nonprofit in New Interview and continue at `/intake/fl501c3/{interview_id}` after the client step. The wizard (`src/components/intake/fl501c3/`) saves on every step change, blocks moving on until the step's sections pass final validation, and submits from the Review step. Document uploads (`documents.uploads`) are not collected by the wizard yet.
+
 Invalid payloads return `422` with `errors` and `warnings`, each `{ path, code, message }`, where `path` is a JSON Pointer relative to `answers`.
 
 ## Rule evaluation and action queue

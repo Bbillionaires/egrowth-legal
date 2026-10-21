@@ -21,7 +21,10 @@ test('an empty draft can be saved but not submitted', () => {
   assert.equal(validateIntake(emptyPayload(), { mode: 'draft' }).ok, true)
   const final = validateIntake(emptyPayload(), { mode: 'final' })
   assert.equal(final.ok, false)
-  assert.ok(codes(final.errors).includes('/applicant required'))
+  // each missing question is reported, not just the missing section
+  assert.ok(codes(final.errors).includes('/applicant/name required'))
+  assert.ok(codes(final.errors).includes('/activities minItems'))
+  assert.equal(codes(final.errors).includes('/applicant required'), false)
 })
 
 test('drafts still reject malformed answers and hidden fields', () => {

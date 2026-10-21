@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { ANSWERS_KEY, emptyPayload } from '@/lib/intake/fl501c3/payload'
+import { ANSWERS_KEY, emptyPayload, prepareForSave } from '@/lib/intake/fl501c3/payload'
 import { SECTIONS, type Section, validateIntake } from '@/lib/intake/fl501c3/validate'
 
 const STAFF_ROLES = ['master', 'admin', 'staff']
@@ -55,7 +55,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   let body: any
   try { body = JSON.parse(raw) } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const { action, payload, step } = body ?? {}
+  const { action, step } = body ?? {}
+  // Drop answers to hidden questions and rebuild the unknown markers before validating
+  const payload = body?.payload && typeof body.payload === 'object' && body.payload.answers && typeof body.payload.answers === 'object'
+    ? prepareForSave(body.payload)
+    : body?.payload
   if (action !== 'save' && action !== 'submit') {
     return NextResponse.json({ error: "action must be 'save' or 'submit'" }, { status: 400 })
   }
@@ -87,6 +91,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   return NextResponse.json({
     saved: true,
+    payload,
     status: action === 'submit' ? 'completed' : interview.status,
     warnings: result.warnings,
     ...(stepResult && { step: { complete: stepResult.ok, errors: stepResult.errors, warnings: stepResult.warnings } }),

@@ -1,6 +1,7 @@
 import Ajv2020, { type ErrorObject } from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
 import schema from './fl_501c3_intake_schema.json'
+import { escapePointer, findNullPointers } from './pointers'
 
 // Validation for the Florida 501(c)(3) intake payload (see fl_501c3_form_spec.md).
 //
@@ -13,6 +14,7 @@ export const SECTIONS = [
   'finance', 'fundraising', 'screen', 'documents', 'consent',
 ] as const
 export type Section = typeof SECTIONS[number]
+const REQUIRED_SECTIONS = SECTIONS.filter(s => s !== 'documents')
 export type Mode = 'draft' | 'final'
 
 export interface Issue {
@@ -75,7 +77,14 @@ export function validateIntake(
   const warnings: Issue[] = []
   const check = mode === 'final' ? validateFinalSchema : validateDraftSchema
 
-  if (!check(payload)) errors.push(...(check.errors ?? []).filter(e => e.keyword !== 'if').map(toIssue))
+  // An unanswered section is checked as empty so each missing question gets its own error
+  if (mode === 'final' && isPayloadShape(payload)) {
+    const answers = { ...payload.answers }
+    for (const s of REQUIRED_SECTIONS) if (answers[s] === undefined) answers[s] = s === 'activities' ? [] : {}
+    payload = { ...payload, answers }
+  }
+
+  if (!check(payload))errors.push(...(check.errors ?? []).filter(e => e.keyword !== 'if').map(toIssue))
 
   if (isPayloadShape(payload)) semanticChecks(payload, mode, errors, warnings)
 
@@ -174,19 +183,6 @@ function semanticChecks(payload: IntakePayload, mode: Mode, errors: Issue[], war
   if (directors.length > 0 && directors.length < 3) {
     warnings.push({ path: '/governance/directors', code: 'few_directors', message: 'Fewer than three directors. The IRS and Florida accept this, but it will be flagged for review.' })
   }
-}
-
-function findNullPointers(node: unknown, base = ''): string[] {
-  if (node === null) return [base]
-  if (Array.isArray(node)) return node.flatMap((v, i) => findNullPointers(v, `${base}/${i}`))
-  if (typeof node === 'object' && node) {
-    return Object.entries(node).flatMap(([k, v]) => findNullPointers(v, `${base}/${escapePointer(k)}`))
-  }
-  return []
-}
-
-function escapePointer(key: string) {
-  return key.replace(/~/g, '~0').replace(/\//g, '~1')
 }
 
 // Converts an Ajv error to a path relative to answers and a readable message

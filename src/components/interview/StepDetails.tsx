@@ -20,7 +20,6 @@ export default function StepDetails({ answers, onChange, onNext, onBack }: Props
 
       {service === 'trust_estate' && <TrustEstateFields answers={answers} onChange={onChange} />}
       {service === 'for_profit'   && <ForProfitFields   answers={answers} onChange={onChange} />}
-      {service === 'nonprofit'    && <NonprofitFields   answers={answers} onChange={onChange} />}
       {service === 'trustee_service' && <TrusteeServiceFields answers={answers} onChange={onChange} />}
 
       {/* Shared: Trustee service upsell */}
@@ -152,50 +151,6 @@ function ForProfitFields({ answers, onChange }: { answers: InterviewAnswers; onC
           placeholder="Describe the primary business purpose..."
           className="input min-h-[60px] resize-y"
         />
-      </div>
-    </>
-  )
-}
-
-// ─── Nonprofit ────────────────────────────
-function NonprofitFields({ answers, onChange }: { answers: InterviewAnswers; onChange: (a: Partial<InterviewAnswers>) => void }) {
-  return (
-    <>
-      <div className="mb-3">
-        <label className="label">Organization Name</label>
-        <input
-          value={answers.org_name ?? ''}
-          onChange={e => onChange({ org_name: e.target.value })}
-          placeholder="Official legal name of the organization"
-          className="input"
-        />
-      </div>
-      <div className="mb-3">
-        <label className="label">Mission Statement</label>
-        <textarea
-          value={answers.mission_statement ?? ''}
-          onChange={e => onChange({ mission_statement: e.target.value })}
-          placeholder="Describe the organization's charitable purpose..."
-          className="input min-h-[80px] resize-y"
-        />
-      </div>
-      <div className="mb-3">
-        <label className="label">Board Members (Name + Title)</label>
-        <textarea
-          value={answers.board_members ?? ''}
-          onChange={e => onChange({ board_members: e.target.value })}
-          placeholder="e.g. Robert Johnson — President&#10;Maria Torres — Secretary&#10;Kevin Williams — Treasurer"
-          className="input min-h-[80px] resize-y"
-        />
-      </div>
-      <div>
-        <label className="label">Tax Year End</label>
-        <select value={answers.tax_year ?? ''} onChange={e => onChange({ tax_year: e.target.value })} className="input">
-          <option value="">Select fiscal year end...</option>
-          <option value="12/31">December 31 (Calendar Year)</option>
-          <option value="06/30">June 30</option>
-          <option value="09/30">September 30</option>
-        </select>
       </div>
     </>
   )

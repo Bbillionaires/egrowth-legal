@@ -6,7 +6,7 @@ const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password']
 // so Supabase recovery tokens can be exchanged even with an existing session
 const RESET_ROUTE = '/reset-password'
 const CLIENT_ROUTES = ['/verify', '/account', '/client', '/interview/will']
-const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
+const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault', '/intake']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
