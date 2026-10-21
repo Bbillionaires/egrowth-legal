@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { FileText, CheckCircle, AlertCircle, Users } from 'lucide-react'
+import { FileText, CheckCircle, AlertCircle, Users, Building2 } from 'lucide-react'
 
 const statusBadge: Record<string, string> = {
   draft:      'badge badge-pending',
@@ -115,7 +115,16 @@ export default async function ClientHomePage() {
       {/* Quick actions */}
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Link
+            href="/client/nonprofit"
+            className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors text-center group"
+          >
+            <Building2 size={20} className="text-brand-600" />
+            <span className="text-xs font-medium text-gray-700 group-hover:text-brand-700">
+              Start a Nonprofit (501(c)(3))
+            </span>
+          </Link>
           <Link
             href="/interview/will"
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors text-center group"

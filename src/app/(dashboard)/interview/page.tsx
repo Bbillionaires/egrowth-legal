@@ -123,6 +123,7 @@ export default function InterviewPage() {
             onChange={updateAnswers}
             onNext={async () => {
               setStepError(null)
+              let savedClientId = clientId
               // Update the existing draft client instead of inserting a new one
               if (clientId) {
                 await supabase.from('clients').update({
@@ -145,11 +146,27 @@ export default function InterviewPage() {
                   state: answers.state,
                 }).select().single()
                 if (client) {
+                  savedClientId = client.id
                   setClientId(client.id)
                   if (interviewId) {
                     await supabase.from('interviews').update({ client_id: client.id }).eq('id', interviewId)
                   }
                 }
+              }
+              // Nonprofits continue in the Florida 501(c)(3) intake instead of the generic details step
+              if (answers.service_type === 'nonprofit' && savedClientId) {
+                const res = await fetch('/api/intake/fl501c3', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ client_id: savedClientId }),
+                })
+                const data = await res.json()
+                if (!res.ok) {
+                  setStepError(data.error ?? 'Could not open the nonprofit intake.')
+                  return
+                }
+                router.push(`/intake/fl501c3/${data.interview_id}`)
+                return
               }
               await next()
             }}
