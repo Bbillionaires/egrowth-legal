@@ -51,7 +51,7 @@ export default function StepClientInfo({ answers, onChange, onNext, onBack }: Pr
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="label">First Name *</label>
+          <label className="label">Full Name *</label>
           <input {...register('full_name')} placeholder="Robert Johnson" className="input" />
           {errors.full_name && <p className="text-xs text-red-500 mt-1">{errors.full_name.message}</p>}
         </div>

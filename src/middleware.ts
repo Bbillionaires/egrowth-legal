@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
-const CLIENT_ROUTES = ['/interview', '/verify', '/account', '/client']
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password']
+// /reset-password is excluded from the "logged in → dashboard" redirect
+// so Supabase recovery tokens can be exchanged even with an existing session
+const RESET_ROUTE = '/reset-password'
+const CLIENT_ROUTES = ['/verify', '/account', '/client', '/interview/will']
 const STAFF_ONLY = ['/team', '/queue', '/trustee', '/vault']
 
 export async function middleware(request: NextRequest) {
@@ -27,8 +30,12 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   const isPublic = PUBLIC_ROUTES.some(r => path.startsWith(r))
+  const isReset = path.startsWith(RESET_ROUTE)
   const isClient = CLIENT_ROUTES.some(r => path.startsWith(r))
   const isStaff = STAFF_ONLY.some(r => path.startsWith(r))
+
+  // Always allow reset-password through — token exchange must happen on the page
+  if (isReset) return supabaseResponse
 
   // Not logged in + not public + not client route → login
   if (!user && !isPublic && !isClient) {
@@ -37,10 +44,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Logged in + hitting login page → dashboard
+  // Logged in + hitting a public auth page → redirect by role
   if (user && isPublic) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = profile?.role === 'client' ? '/client' : '/dashboard'
     return NextResponse.redirect(url)
   }
 
@@ -49,7 +61,7 @@ export async function middleware(request: NextRequest) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     if (!profile || profile.role === 'client') {
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = '/client'
       return NextResponse.redirect(url)
     }
   }
