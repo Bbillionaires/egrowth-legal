@@ -3,11 +3,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, ListChecks, FilePlus, FolderLock,
-  Shield, Users, Settings, LogOut, Bell, ChevronRight
+  Shield, Users, Settings, LogOut, ChevronRight
 } from 'lucide-react'
 import clsx from 'clsx'
+import NotificationsBell from './components/NotificationsBell'
 
 const NAV = [
   { label: 'Overview',    items: [
@@ -30,6 +32,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [userInitials, setUserInitials] = useState('...')
+  const [userRole, setUserRole] = useState('')
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', user.id)
+        .single()
+      if (profile) {
+        const name = profile.full_name ?? ''
+        const initials = name
+          .split(' ')
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((n: string) => n[0].toUpperCase())
+          .join('')
+        setUserInitials(initials || '?')
+        setUserRole(profile.role ?? '')
+      }
+    }
+    loadUser()
+  }, [])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -101,17 +129,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-              <Bell size={16} className="text-gray-500" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
-            </button>
+            <NotificationsBell />
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-medium">
-                DA
+                {userInitials}
               </div>
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                Master
-              </span>
+              {userRole && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full capitalize">
+                  {userRole}
+                </span>
+              )}
             </div>
           </div>
         </header>
