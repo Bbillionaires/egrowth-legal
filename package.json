@@ -6,13 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@stripe/stripe-js": "^4.6.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "docxtemplater": "^3.49.0",
