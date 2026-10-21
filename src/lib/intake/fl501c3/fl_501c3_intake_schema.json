@@ -1,0 +1,1345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:egrowth:schema:fl-501c3-intake:2.0.0",
+  "title": "Florida 501(c)(3) formation intake",
+  "description": "Payload contract for the Florida 501(c)(3) intake. Semantic checks the schema cannot express are listed in fl_501c3_form_spec.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "answers",
+    "unknown_fields"
+  ],
+  "$defs": {
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "line1",
+        "city",
+        "state",
+        "postal_code"
+      ],
+      "properties": {
+        "line1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line2": {
+          "type": "string",
+          "minLength": 1
+        },
+        "city": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "postal_code": {
+          "type": "string",
+          "pattern": "^[0-9]{5}(-[0-9]{4})?$"
+        }
+      }
+    },
+    "florida_street_address": {
+      "description": "Florida physical street address; PO boxes are not accepted.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/address"
+        }
+      ],
+      "properties": {
+        "state": {
+          "const": "FL"
+        },
+        "line1": {
+          "not": {
+            "pattern": "[Pp]\\.?\\s*[Oo]\\.?\\s*[Bb][Oo][Xx]|[Pp][Oo][Ss][Tt]\\s+[Oo][Ff][Ff][Ii][Cc][Ee]\\s+[Bb][Oo][Xx]"
+          }
+        },
+        "line2": {
+          "not": {
+            "pattern": "[Pp]\\.?\\s*[Oo]\\.?\\s*[Bb][Oo][Xx]|[Pp][Oo][Ss][Tt]\\s+[Oo][Ff][Ff][Ii][Cc][Ee]\\s+[Bb][Oo][Xx]"
+          }
+        }
+      }
+    },
+    "financial_year": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "receipts",
+        "expenses"
+      ],
+      "properties": {
+        "year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "receipts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "expenses": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "unknown_fields": {
+      "description": "JSON Pointers (relative to answers) of every field answered as unknown. Each listed field holds null; each null field is listed.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(/[^/]+)+$"
+      }
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicant",
+        "organization",
+        "activities",
+        "governance",
+        "agent",
+        "finance",
+        "fundraising",
+        "screen",
+        "consent"
+      ],
+      "properties": {
+        "applicant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "email",
+            "phone",
+            "role",
+            "authorized"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "phone": {
+              "type": "string",
+              "pattern": "^\\+[1-9][0-9]{6,14}$",
+              "description": "E.164"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "founder",
+                "director",
+                "authorized_agent",
+                "other"
+              ]
+            },
+            "authorized": {
+              "type": "boolean"
+            }
+          }
+        },
+        "organization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "names",
+            "principal_address",
+            "mission",
+            "exempt_purpose",
+            "beneficiaries",
+            "geography"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "new",
+                "existing_florida",
+                "existing_other_state"
+              ]
+            },
+            "existing": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "state",
+                "incorporation_date",
+                "entity_id",
+                "prior_irs_status"
+              ],
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$"
+                },
+                "incorporation_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "entity_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "ein": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9]{2}-[0-9]{7}$"
+                },
+                "prior_irs_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "none",
+                    "pending",
+                    "exempt",
+                    "denied",
+                    "revoked",
+                    null
+                  ]
+                },
+                "revocation_history": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "names": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 2
+              }
+            },
+            "principal_address": {
+              "$ref": "#/$defs/address"
+            },
+            "mailing_address": {
+              "$ref": "#/$defs/address"
+            },
+            "mission": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 1000
+            },
+            "exempt_purpose": {
+              "type": "string",
+              "enum": [
+                "charitable",
+                "educational",
+                "religious",
+                "scientific",
+                "literary",
+                "amateur_sports",
+                "cruelty_prevention_children",
+                "cruelty_prevention_animals",
+                "other"
+              ]
+            },
+            "beneficiaries": {
+              "type": "string",
+              "minLength": 20
+            },
+            "geography": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "florida",
+                  "other_us_states",
+                  "outside_us"
+                ]
+              }
+            }
+          }
+        },
+        "activities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "description",
+              "beneficiaries",
+              "location",
+              "mission_connection",
+              "percent_resources"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 20
+              },
+              "beneficiaries": {
+                "type": "string",
+                "minLength": 1
+              },
+              "location": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mission_connection": {
+                "type": "string",
+                "minLength": 1
+              },
+              "percent_resources": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          }
+        },
+        "governance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "directors",
+            "officers",
+            "voting_members",
+            "director_selection"
+          ],
+          "properties": {
+            "directors": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "name",
+                  "address",
+                  "email",
+                  "role",
+                  "relationships",
+                  "compensated"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "address": {
+                    "$ref": "#/$defs/address"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "relationships": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "compensated": {
+                    "type": "boolean"
+                  },
+                  "compensation_amount": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "compensated": {
+                      "const": true
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "compensation_amount"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "compensation_amount"
+                    ]
+                  }
+                }
+              }
+            },
+            "officers": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "title"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "director_id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$",
+                    "description": "id of the director this officer also is"
+                  }
+                }
+              }
+            },
+            "voting_members": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unsure"
+              ]
+            },
+            "director_selection": {
+              "type": "string",
+              "enum": [
+                "board",
+                "members",
+                "founder",
+                "other"
+              ]
+            }
+          }
+        },
+        "agent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "individual",
+                "company",
+                "need_service"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "florida_street_address": {
+              "$ref": "#/$defs/florida_street_address"
+            },
+            "accepted": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "need_service"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "name"
+                  ]
+                },
+                {
+                  "required": [
+                    "florida_street_address"
+                  ]
+                },
+                {
+                  "required": [
+                    "accepted"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "name",
+              "florida_street_address",
+              "accepted"
+            ]
+          }
+        },
+        "finance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fiscal_year_end",
+            "projections",
+            "asset_fmv",
+            "funding_sources",
+            "public_charity_basis"
+          ],
+          "properties": {
+            "fiscal_year_end": {
+              "type": "string",
+              "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+            },
+            "actual_years": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/financial_year"
+              }
+            },
+            "projections": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "$ref": "#/$defs/financial_year"
+              }
+            },
+            "asset_fmv": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "funding_sources": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "donations",
+                  "grants",
+                  "fees",
+                  "dues",
+                  "sales",
+                  "government",
+                  "other"
+                ]
+              }
+            },
+            "public_charity_basis": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        },
+        "fundraising": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "florida_solicitation"
+          ],
+          "properties": {
+            "florida_solicitation": {
+              "type": "boolean"
+            },
+            "prior_contributions": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "paid_personnel": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "professional_fundraiser": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "methods": {
+              "type": "object",
+              "minProperties": 1
+            }
+          },
+          "if": {
+            "properties": {
+              "florida_solicitation": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "paid_personnel",
+              "professional_fundraiser",
+              "methods"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "prior_contributions"
+                  ]
+                },
+                {
+                  "required": [
+                    "paid_personnel"
+                  ]
+                },
+                {
+                  "required": [
+                    "professional_fundraiser"
+                  ]
+                },
+                {
+                  "required": [
+                    "methods"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "screen": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "flags"
+          ],
+          "properties": {
+            "flags": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "scholarships",
+                  "individual_grants",
+                  "organization_grants",
+                  "foreign_operations",
+                  "foreign_grants",
+                  "school",
+                  "hospital",
+                  "church",
+                  "lobbying",
+                  "campaign_activity",
+                  "substantial_sales",
+                  "gaming",
+                  "loans",
+                  "founder_compensation",
+                  "related_party_transactions",
+                  "supporting_organization",
+                  "donor_advised_funds",
+                  "credit_counseling",
+                  "disaster_relief",
+                  "prior_revocation",
+                  "successor_entity",
+                  "private_foundation_intent"
+                ]
+              }
+            },
+            "details": {
+              "type": "object",
+              "propertyNames": {
+                "enum": [
+                  "scholarships",
+                  "individual_grants",
+                  "organization_grants",
+                  "foreign_operations",
+                  "foreign_grants",
+                  "school",
+                  "hospital",
+                  "church",
+                  "lobbying",
+                  "campaign_activity",
+                  "substantial_sales",
+                  "gaming",
+                  "loans",
+                  "founder_compensation",
+                  "related_party_transactions",
+                  "supporting_organization",
+                  "donor_advised_funds",
+                  "credit_counseling",
+                  "disaster_relief",
+                  "prior_revocation",
+                  "successor_entity",
+                  "private_foundation_intent"
+                ]
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 10
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "details"
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "scholarships"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "scholarships"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "individual_grants"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "individual_grants"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "organization_grants"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "organization_grants"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "foreign_operations"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "foreign_operations"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "foreign_grants"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "foreign_grants"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "school"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "school"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "hospital"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "hospital"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "church"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "church"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "lobbying"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "lobbying"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "campaign_activity"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "campaign_activity"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "substantial_sales"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "substantial_sales"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "gaming"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "gaming"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "loans"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "loans"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "founder_compensation"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "founder_compensation"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "related_party_transactions"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "related_party_transactions"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "supporting_organization"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "supporting_organization"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "donor_advised_funds"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "donor_advised_funds"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "credit_counseling"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "credit_counseling"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "disaster_relief"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "disaster_relief"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "prior_revocation"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "prior_revocation"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "successor_entity"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "successor_entity"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "flags": {
+                    "contains": {
+                      "const": "private_foundation_intent"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "details"
+                ],
+                "properties": {
+                  "details": {
+                    "required": [
+                      "private_foundation_intent"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "documents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "uploads": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "file_id",
+                  "name"
+                ],
+                "properties": {
+                  "file_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "pattern": "\\.([Pp][Dd][Ff]|[Dd][Oo][Cc][Xx]|[Xx][Ll][Ss][Xx])$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "consent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "prepare"
+          ],
+          "properties": {
+            "prepare": {
+              "type": "boolean"
+            },
+            "submit": {
+              "type": "boolean",
+              "description": "Recorded for reference only; never authorizes a filing (see SUBMISSION rule)."
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "organization": {
+                "properties": {
+                  "status": {
+                    "const": "new"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "organization": {
+                "not": {
+                  "required": [
+                    "existing"
+                  ]
+                }
+              },
+              "finance": {
+                "not": {
+                  "required": [
+                    "actual_years"
+                  ]
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "organization": {
+                "required": [
+                  "existing"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
