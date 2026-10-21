@@ -234,8 +234,8 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- PROFILES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "profiles: own read"     ON profiles FOR SELECT USING (auth.uid() = id OR is_staff_or_above());
-CREATE POLICY "profiles: staff manage" ON profiles FOR ALL    USING (is_staff_or_above()) WITH CHECK (is_staff_or_above());
+-- Read-only from the browser; all profile writes go through the service role in /api/team
+CREATE POLICY "profiles: read own or staff" ON profiles FOR SELECT TO authenticated USING (id = auth.uid() OR is_staff_or_above());
 
 -- CLIENTS
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
