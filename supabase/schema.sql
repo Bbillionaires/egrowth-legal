@@ -43,7 +43,8 @@ BEGIN
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'client')
+    -- app_meta_data is only writable with the service role; user_meta_data comes from whoever signs up
+    COALESCE((NEW.raw_app_meta_data->>'role')::user_role, 'client')
   );
   RETURN NEW;
 END;

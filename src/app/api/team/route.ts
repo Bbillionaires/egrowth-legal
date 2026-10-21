@@ -28,6 +28,11 @@ export async function POST(request: NextRequest) {
   const { data: existingUsers } = await admin.auth.admin.listUsers()
   const alreadyExists = existingUsers?.users?.find((u: any) => u.email === email)
   if (alreadyExists) {
+    const { data: existingProfile } = await admin
+      .from('profiles').select('role').eq('id', alreadyExists.id).single()
+    if (existingProfile && !allowed.includes(existingProfile.role)) {
+      return NextResponse.json({ error: 'Cannot modify this member' }, { status: 403 })
+    }
     await admin.from('profiles')
       .update({ full_name, role, phone, created_by: user.id })
       .eq('id', alreadyExists.id)
@@ -40,7 +45,8 @@ export async function POST(request: NextRequest) {
     email,
     password: tempPassword,
     email_confirm: true,
-    user_metadata: { full_name, role, phone },
+    user_metadata: { full_name, phone },
+    app_metadata: { role },
   })
 
   if (createError) {
