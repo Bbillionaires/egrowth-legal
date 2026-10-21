@@ -73,6 +73,20 @@ The server applies these after schema validation, because JSON Schema cannot exp
 6. Each `governance.directors[].id` is unique, and each `officers[].director_id` names an existing director.
 7. `screen.flags` containing `campaign_activity` stops the intake and escalates (see `SPECIAL_REVIEW`).
 
+## Storage and API
+The payload is stored in `interviews.answers.fl_501c3` on the client's single `nonprofit` interview. `src/lib/intake/fl501c3/validate.ts` implements both validation modes:
+
+- `draft`: shape and format of whatever is answered; nothing is required; hidden fields are still rejected.
+- `final`: the full schema plus the semantic checks above. Either mode can be limited to the answer sections of one wizard step.
+
+Endpoints (staff = master, admin, staff; clients act only on their own interview):
+
+- `POST /api/intake/fl501c3` opens the intake, creating the interview on first use. Staff send `client_id`.
+- `GET /api/intake/fl501c3/{interview_id}` returns `payload`, `status` and `current_step`.
+- `PUT /api/intake/fl501c3/{interview_id}` with `{ action: "save", payload, step?, sections? }` stores a draft and, when `sections` is given, reports whether those sections are complete. `{ action: "submit", payload }` requires final validation and completes the interview. Clients cannot change a submitted intake; notaries cannot change any.
+
+Invalid payloads return `422` with `errors` and `warnings`, each `{ path, code, message }`, where `path` is a JSON Pointer relative to `answers`.
+
 ## Rule evaluation and action queue
 Evaluate deterministic rules from versioned agency guidance. A language model may draft text and suggest flags but cannot clear a blocking condition or decide eligibility alone. Return `{rule_id, result, source_version, evidence_field_ids, reviewer_status}` for each rule.
 
