@@ -33,12 +33,15 @@ export default function SettingsPage() {
     e.preventDefault()
     setProfileLoading(true)
     setProfileMsg(null)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase.from('profiles').update({ full_name: fullName, phone }).eq('id', user.id)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: fullName, phone }),
+    })
+    const result = await res.json()
     setProfileLoading(false)
-    if (error) {
-      setProfileMsg({ type: 'error', text: error.message })
+    if (!res.ok) {
+      setProfileMsg({ type: 'error', text: result.error ?? 'Could not update profile.' })
     } else {
       setProfile((p: any) => ({ ...p, full_name: fullName, phone }))
       setProfileMsg({ type: 'success', text: 'Profile updated successfully.' })
